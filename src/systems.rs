@@ -1,7 +1,9 @@
-use crate::components::{Flame, LifeTime, Missile, Ship, Speed, Thruster};
+use crate::components::{Asteroid, Flame, LifeTime, Missile, RotationSpeed, Ship, Speed, Thruster};
 use crate::line_sprite::{LineMaterial, LineSprintBundleBuilder};
 use crate::{Resolution, TIME_STEP};
 use bevy::prelude::*;
+use rand::Rng;
+use std::f32::consts::PI;
 use std::time::Duration;
 
 pub fn ship_motion_system(
@@ -37,6 +39,14 @@ pub fn ship_motion_system(
 pub fn basic_speed_system(mut query: Query<(&Speed, &mut Transform), Without<Ship>>) {
     for (speed, mut transform) in query.iter_mut() {
         transform.translation += speed.0.extend(0.0) * TIME_STEP;
+    }
+}
+
+pub fn basic_rotation_speed_system(
+    mut query: Query<(&RotationSpeed, &mut Transform), Without<Ship>>,
+) {
+    for (rot_speed, mut transform) in query.iter_mut() {
+        transform.rotate(Quat::from_rotation_z(rot_speed.0 * TIME_STEP))
     }
 }
 
@@ -111,4 +121,41 @@ pub fn wrap_positions(resolution: Res<Resolution>, mut query: Query<&mut Transfo
             transform.translation.y = resolution.height / 2.0;
         }
     }
+}
+
+pub fn spawn_asteroid_system(
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<LineMaterial>>,
+    mut commands: Commands,
+    resolution: Res<Resolution>,
+) {
+    let rng = &mut rand::thread_rng();
+    let size = rng.gen_range(10.0..50.0);
+
+    const NUM_VERTICES: usize = 10;
+    let pts = (0..NUM_VERTICES)
+        .map(|i| 2.0 * PI * (i as f32 / NUM_VERTICES as f32))
+        .map(|a| {
+            let rng = &mut rand::thread_rng();
+            size * Vec2::new(
+                a.cos() + rng.gen_range(-0.1..0.1),
+                a.sin() + rng.gen_range(-0.1..0.1),
+            )
+        });
+
+    commands.spawn((
+        Asteroid,
+        Speed(Vec2::new(
+            rng.gen_range(-50.0..50.0),
+            rng.gen_range(-50.0..50.0),
+        )),
+        RotationSpeed(rng.gen_range(-1.0..1.0)),
+        LineSprintBundleBuilder::from_vertices(pts, true)
+            .transform(Transform::from_translation(Vec3::new(
+                rng.gen_range(-resolution.width / 2.0..resolution.width / 2.0),
+                rng.gen_range(-resolution.height / 2.0..resolution.height / 2.0),
+                0.0,
+            )))
+            .build(&mut meshes, &mut materials),
+    ));
 }

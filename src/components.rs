@@ -7,6 +7,9 @@ use bevy::prelude::*;
 pub struct Speed(pub Vec2);
 
 #[derive(Component, Debug, Default)]
+pub struct RotationSpeed(pub f32);
+
+#[derive(Component, Debug, Default)]
 pub struct LifeTime(pub Timer);
 
 // ============================================
@@ -61,3 +64,9 @@ impl Default for Missile {
         }
     }
 }
+
+// ============================================
+// Asteroid
+
+#[derive(Component)]
+pub struct Asteroid;
