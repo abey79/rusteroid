@@ -16,27 +16,35 @@ impl Plugin for LineSpritePlugin {
 
 pub struct LineSprintBundleBuilder {
     lines: Vec<(Vec2, Vec2)>,
+    transform: Transform,
 }
 
 impl LineSprintBundleBuilder {
-    pub fn from_vertices(vertices: impl IntoIterator<Item = Vec2>) -> Self {
+    pub fn from_vertices(vertices: impl IntoIterator<Item = Vec2>, close: bool) -> Self {
         let vertices: Vec<Vec2> = vertices.into_iter().collect();
-        Self::from_segment(
-            vertices
-                .windows(2)
-                .map(|w| (w[0], w[1]))
-                .chain(if vertices.len() > 1 {
-                    Some((vertices[vertices.len() - 1], vertices[0]))
-                } else {
-                    None
-                }),
-        )
+        let segment_iter = vertices.windows(2).map(|w| (w[0], w[1]));
+
+        if close {
+            Self::from_segment(segment_iter.chain(if vertices.len() > 1 {
+                Some((vertices[vertices.len() - 1], vertices[0]))
+            } else {
+                None
+            }))
+        } else {
+            Self::from_segment(segment_iter)
+        }
     }
 
     pub fn from_segment(segment: impl IntoIterator<Item = (Vec2, Vec2)>) -> Self {
         Self {
             lines: segment.into_iter().collect(),
+            transform: Transform::default(),
         }
+    }
+
+    pub fn transform(mut self, transform: Transform) -> Self {
+        self.transform = transform;
+        self
     }
 
     pub fn build(
@@ -54,6 +62,7 @@ impl LineSprintBundleBuilder {
             material: materials.add(LineMaterial {
                 color: Color::WHITE,
             }),
+            transform: self.transform,
             ..default()
         }
     }

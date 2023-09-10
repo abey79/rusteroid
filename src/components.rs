@@ -1,5 +1,17 @@
 use bevy::prelude::*;
 
+// ============================================
+// Common
+
+#[derive(Component, Debug, Default)]
+pub struct Speed(pub Vec2);
+
+#[derive(Component, Debug, Default)]
+pub struct LifeTime(pub Timer);
+
+// ============================================
+// Ship
+
 #[derive(Component)]
 pub struct Ship {
     pub thrust_accel: f32,
@@ -8,6 +20,9 @@ pub struct Ship {
     pub rot_speed: f32,
 }
 
+impl Ship {
+    pub const MISSILE_SPAWN_OFFSET: f32 = 10.0;
+}
 impl Default for Ship {
     fn default() -> Self {
         Self {
@@ -27,5 +42,22 @@ pub struct Thruster {
 #[derive(Component)]
 pub struct Flame;
 
-#[derive(Component, Debug, Default)]
-pub struct Speed(pub Vec2);
+// ============================================
+// Missile
+
+#[derive(Component)]
+pub struct Missile {
+    pub time_to_live: f32,
+    pub speed: f32,
+    pub momentum_transfer: f32,
+}
+
+impl Default for Missile {
+    fn default() -> Self {
+        Self {
+            time_to_live: 1.0,
+            speed: 450.0,
+            momentum_transfer: 0.2,
+        }
+    }
+}
