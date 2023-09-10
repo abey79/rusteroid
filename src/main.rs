@@ -1,5 +1,7 @@
+mod components;
 mod line_sprite;
 
+use crate::components::{Flame, Ship, Speed, Thruster};
 use crate::line_sprite::{LineMaterial, LineSprintBundleBuilder, LineSpritePlugin};
 use bevy::prelude::*;
 use bevy::window::WindowResized;
@@ -8,25 +10,6 @@ const TIME_STEP: f32 = 1.0 / 60.0;
 
 const INITIAL_WIDTH: f32 = 800.0;
 const INITIAL_HEIGHT: f32 = 600.0;
-
-#[derive(Component)]
-struct Ship {
-    thrust_accel: f32,
-    idle_accel: f32,
-    max_speed: f32,
-    rot_speed: f32,
-}
-
-#[derive(Component, Debug, Default)]
-struct Thruster {
-    active: bool,
-}
-
-#[derive(Component)]
-struct Flame;
-
-#[derive(Component, Debug, Default)]
-struct Speed(Vec2);
 
 #[derive(Resource)]
 struct FrameTimer(Timer);
@@ -41,8 +24,6 @@ fn ship_motion_system(
     if thruster.active {
         speed.0 += movement_direction.truncate().normalize() * ship.thrust_accel * TIME_STEP;
         speed.0 = speed.0.clamp_length_max(ship.max_speed);
-
-        println!("speed: {:?}", speed.0);
     }
 
     // always decelerate a bit
@@ -102,12 +83,7 @@ fn setup(
     // Spawn a list of lines with start and end points for each lines
     let parent = commands
         .spawn((
-            Ship {
-                thrust_accel: 300.0,
-                idle_accel: -10.0,
-                max_speed: 450.0,
-                rot_speed: 5.0,
-            },
+            Ship::default(),
             Speed::default(),
             Thruster::default(),
             LineSprintBundleBuilder::from_vertices([
