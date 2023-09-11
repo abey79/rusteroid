@@ -1,15 +1,19 @@
 mod components;
+mod events;
 mod line_sprite;
 mod systems;
 
 use crate::components::{Flame, Ship, Speed, Thruster};
+use crate::events::{AsteroidKillEvent, AsteroidSpawnEvent};
 use crate::line_sprite::{LineMaterial, LineSprintBundleBuilder, LineSpritePlugin};
 use crate::systems::{
-    basic_rotation_speed_system, basic_speed_system, keyboard_input_system, life_time_system,
-    ship_motion_system, spawn_asteroid_system, spawn_missiles_system, wrap_positions,
+    asteroid_birth_system, asteroid_kill_system, basic_rotation_speed_system, basic_speed_system,
+    explode_asteroid, keyboard_input_system, life_time_system, ship_motion_system,
+    spawn_missiles_system, spawn_one_asteroid, wrap_positions,
 };
 use bevy::prelude::*;
-use bevy::window::WindowResized;
+use bevy::window::{WindowResized, WindowResolution};
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -23,6 +27,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<LineMaterial>>,
+    mut msaa: ResMut<Msaa>,
 ) {
     commands.spawn(Camera2dBundle::default());
 
@@ -60,6 +65,8 @@ fn setup(
         .id();
 
     commands.entity(parent).push_children(&[child]);
+
+    *msaa = Msaa::Off;
 }
 
 trait ResExt {
@@ -108,12 +115,13 @@ fn main() {
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Rusteroïds".into(),
-                    resolution: (INITIAL_WIDTH, INITIAL_HEIGHT).into(),
+                    resolution: WindowResolution::new(INITIAL_WIDTH, INITIAL_HEIGHT),
                     ..default()
                 }),
                 ..default()
             }),
             LineSpritePlugin,
+            WorldInspectorPlugin::new(),
         ))
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(FixedTime::new_from_secs(TIME_STEP))
@@ -122,7 +130,7 @@ fn main() {
             height: INITIAL_HEIGHT,
         })
         .insert_resource(FrameTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
-        .add_systems(Startup, (setup, spawn_asteroid_system))
+        .add_systems(Startup, (setup, spawn_one_asteroid))
         .add_systems(First, (spawn_missiles_system,)) // dont miss key-presses
         .add_systems(
             FixedUpdate,
@@ -130,11 +138,16 @@ fn main() {
                 keyboard_input_system.before(ship_motion_system),
                 ship_motion_system,
                 life_time_system,
+                asteroid_birth_system,
+                asteroid_kill_system,
                 basic_speed_system,
                 basic_rotation_speed_system,
                 on_resize_system,
                 wrap_positions,
             ),
         )
+        .add_systems(Update, (explode_asteroid,))
+        .init_resource::<Events<AsteroidSpawnEvent>>() // no GC for these events
+        .add_event::<AsteroidKillEvent>()
         .run();
 }

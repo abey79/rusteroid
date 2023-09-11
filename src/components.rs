@@ -68,5 +68,8 @@ impl Default for Missile {
 // ============================================
 // Asteroid
 
-#[derive(Component)]
-pub struct Asteroid;
+#[derive(Component, Debug)]
+pub struct Asteroid {
+    /// "size" of the asteroid, breaks into asteroids of category `category - 1`
+    pub category: u8,
+}

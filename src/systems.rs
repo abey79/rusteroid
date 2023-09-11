@@ -1,4 +1,5 @@
 use crate::components::{Asteroid, Flame, LifeTime, Missile, RotationSpeed, Ship, Speed, Thruster};
+use crate::events::{AsteroidKillEvent, AsteroidSpawnEvent};
 use crate::line_sprite::{LineMaterial, LineSprintBundleBuilder};
 use crate::{Resolution, TIME_STEP};
 use bevy::prelude::*;
@@ -123,39 +124,106 @@ pub fn wrap_positions(resolution: Res<Resolution>, mut query: Query<&mut Transfo
     }
 }
 
-pub fn spawn_asteroid_system(
+/// for the initial asteroid spawn
+pub fn spawn_one_asteroid(mut event_writer: EventWriter<AsteroidSpawnEvent>) {
+    event_writer.send(AsteroidSpawnEvent {
+        category: 3,
+        start_position: None,
+        start_speed: None,
+    });
+}
+
+pub fn asteroid_birth_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<LineMaterial>>,
     mut commands: Commands,
     resolution: Res<Resolution>,
+    mut spawn_events: EventReader<AsteroidSpawnEvent>,
 ) {
-    let rng = &mut rand::thread_rng();
-    let size = rng.gen_range(10.0..50.0);
+    for e in spawn_events.iter() {
+        let rng = &mut rand::thread_rng();
+        let size = 10.0 * e.category as f32 + rng.gen_range(-2.0..2.0);
 
-    const NUM_VERTICES: usize = 10;
-    let pts = (0..NUM_VERTICES)
-        .map(|i| 2.0 * PI * (i as f32 / NUM_VERTICES as f32))
-        .map(|a| {
-            let rng = &mut rand::thread_rng();
-            size * Vec2::new(
-                a.cos() + rng.gen_range(-0.1..0.1),
-                a.sin() + rng.gen_range(-0.1..0.1),
+        const NUM_VERTICES: usize = 10;
+        let pts = (0..NUM_VERTICES)
+            .map(|i| 2.0 * PI * (i as f32 / NUM_VERTICES as f32))
+            .map(|a| {
+                let rng = &mut rand::thread_rng();
+                Vec2::new(
+                    a.cos() + rng.gen_range(-0.1..0.1),
+                    a.sin() + rng.gen_range(-0.1..0.1),
+                )
+            });
+
+        let position = e.start_position.unwrap_or_else(|| {
+            Vec2::new(
+                rng.gen_range(-resolution.width / 2.0..resolution.width / 2.0),
+                rng.gen_range(-resolution.height / 2.0..resolution.height / 2.0),
             )
         });
 
-    commands.spawn((
-        Asteroid,
-        Speed(Vec2::new(
-            rng.gen_range(-50.0..50.0),
-            rng.gen_range(-50.0..50.0),
-        )),
-        RotationSpeed(rng.gen_range(-1.0..1.0)),
-        LineSprintBundleBuilder::from_vertices(pts, true)
-            .transform(Transform::from_translation(Vec3::new(
-                rng.gen_range(-resolution.width / 2.0..resolution.width / 2.0),
-                rng.gen_range(-resolution.height / 2.0..resolution.height / 2.0),
-                0.0,
-            )))
-            .build(&mut meshes, &mut materials),
-    ));
+        let speed = e
+            .start_speed
+            .map(|v| v + Vec2::new(rng.gen_range(-20.0..20.0), rng.gen_range(-20.0..20.0)))
+            .unwrap_or_else(|| Vec2::new(rng.gen_range(-50.0..50.0), rng.gen_range(-50.0..50.0)));
+
+        commands.spawn((
+            Asteroid {
+                category: e.category,
+            },
+            Speed(speed),
+            RotationSpeed(rng.gen_range(-1.0..1.0)),
+            LineSprintBundleBuilder::from_vertices(pts, true)
+                .transform(
+                    Transform::from_translation(position.extend(0.0))
+                        .with_scale(Vec3::new(size, size, 1.0)),
+                )
+                .build(&mut meshes, &mut materials),
+        ));
+    }
+}
+
+pub fn asteroid_kill_system(
+    q_asteroid: Query<(Entity, &Transform, &Asteroid)>,
+    q_missile: Query<(Entity, &Transform), With<Missile>>,
+    mut commands: Commands,
+    mut kill_sender: EventWriter<AsteroidKillEvent>,
+    mut spawn_sender: EventWriter<AsteroidSpawnEvent>,
+) {
+    for (asteroid_entity, asteroid_transform, asteroid) in q_asteroid.iter() {
+        for (missile_entity, missile_transform) in q_missile.iter() {
+            if asteroid_transform
+                .translation
+                .distance_squared(missile_transform.translation)
+                < asteroid_transform.scale.x.powi(2)
+            {
+                kill_sender.send(AsteroidKillEvent {
+                    id: asteroid_entity,
+                });
+                commands.entity(asteroid_entity).despawn();
+                commands.entity(missile_entity).despawn();
+                println!("asteroid killed: {:?}", asteroid);
+                // spawn new asteroids
+                if asteroid.category > 1 {
+                    let mut rng = rand::thread_rng();
+                    for _ in 0..3 {
+                        spawn_sender.send(AsteroidSpawnEvent {
+                            category: asteroid.category - 1,
+                            start_position: Some(asteroid_transform.translation.truncate()),
+                            start_speed: Some(Vec2::new(
+                                rng.gen_range(-50.0..50.0),
+                                rng.gen_range(-50.0..50.0),
+                            )),
+                        });
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub fn explode_asteroid(mut receiver: EventReader<AsteroidKillEvent>) {
+    for event in receiver.iter() {
+        println!("asteroid killed: {:?}", event.id);
+    }
 }
