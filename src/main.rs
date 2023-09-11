@@ -9,7 +9,7 @@ use crate::line_sprite::{LineMaterial, LineSprintBundleBuilder, LineSpritePlugin
 use crate::systems::{
     asteroid_birth_system, asteroid_kill_system, basic_rotation_speed_system, basic_speed_system,
     explode_asteroid, keyboard_input_system, life_time_system, ship_motion_system,
-    spawn_missiles_system, spawn_one_asteroid, wrap_positions,
+    spawn_asteroids_system, spawn_missiles_system, wrap_positions,
 };
 use bevy::prelude::*;
 use bevy::window::{WindowResized, WindowResolution};
@@ -130,7 +130,7 @@ fn main() {
             height: INITIAL_HEIGHT,
         })
         .insert_resource(FrameTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
-        .add_systems(Startup, (setup, spawn_one_asteroid))
+        .add_systems(Startup, (setup,))
         .add_systems(First, (spawn_missiles_system,)) // dont miss key-presses
         .add_systems(
             FixedUpdate,
@@ -138,6 +138,7 @@ fn main() {
                 keyboard_input_system.before(ship_motion_system),
                 ship_motion_system,
                 life_time_system,
+                spawn_asteroids_system.before(asteroid_birth_system),
                 asteroid_birth_system,
                 asteroid_kill_system,
                 basic_speed_system,

@@ -125,12 +125,17 @@ pub fn wrap_positions(resolution: Res<Resolution>, mut query: Query<&mut Transfo
 }
 
 /// for the initial asteroid spawn
-pub fn spawn_one_asteroid(mut event_writer: EventWriter<AsteroidSpawnEvent>) {
-    event_writer.send(AsteroidSpawnEvent {
-        category: 3,
-        start_position: None,
-        start_speed: None,
-    });
+pub fn spawn_asteroids_system(
+    mut events: ResMut<Events<AsteroidSpawnEvent>>,
+    query: Query<&Asteroid>,
+) {
+    if query.is_empty() && events.is_empty() {
+        events.send(AsteroidSpawnEvent {
+            category: 3,
+            start_position: None,
+            start_speed: None,
+        });
+    }
 }
 
 pub fn asteroid_birth_system(
@@ -138,9 +143,9 @@ pub fn asteroid_birth_system(
     mut materials: ResMut<Assets<LineMaterial>>,
     mut commands: Commands,
     resolution: Res<Resolution>,
-    mut spawn_events: EventReader<AsteroidSpawnEvent>,
+    mut spawn_events: ResMut<Events<AsteroidSpawnEvent>>,
 ) {
-    for e in spawn_events.iter() {
+    for e in spawn_events.drain() {
         let rng = &mut rand::thread_rng();
         let size = 10.0 * e.category as f32 + rng.gen_range(-2.0..2.0);
 
