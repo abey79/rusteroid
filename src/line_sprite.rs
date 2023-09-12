@@ -1,10 +1,8 @@
 use bevy::prelude::*;
 use bevy::reflect::{TypePath, TypeUuid};
-use bevy::render::mesh::{MeshVertexBufferLayout, PrimitiveTopology};
-use bevy::render::render_resource::{
-    AsBindGroup, PolygonMode, RenderPipelineDescriptor, ShaderRef, SpecializedMeshPipelineError,
-};
-use bevy::sprite::{Material2d, Material2dKey, Material2dPlugin, MaterialMesh2dBundle};
+use bevy::render::mesh::PrimitiveTopology;
+use bevy::render::render_resource::{AsBindGroup, ShaderRef};
+use bevy::sprite::{Material2d, Material2dPlugin, MaterialMesh2dBundle};
 
 pub struct LineSpritePlugin;
 
@@ -71,7 +69,7 @@ impl LineSprintBundleBuilder {
 // ================
 
 #[derive(Default, AsBindGroup, TypeUuid, TypePath, Debug, Clone)]
-#[uuid = "050ce6ac-080a-4d8c-b6b5-b5bab7560d8a"]
+#[uuid = "0aa4e64b-9a35-4cad-a698-33d02503169e"]
 pub struct LineMaterial {
     #[uniform(0)]
     color: Color,
@@ -82,14 +80,14 @@ impl Material2d for LineMaterial {
         "shaders/line_material.wgsl".into()
     }
 
-    fn specialize(
-        descriptor: &mut RenderPipelineDescriptor,
-        _layout: &MeshVertexBufferLayout,
-        _key: Material2dKey<Self>,
-    ) -> Result<(), SpecializedMeshPipelineError> {
-        descriptor.primitive.polygon_mode = PolygonMode::Line;
-        Ok(())
-    }
+    // fn specialize(
+    //     descriptor: &mut RenderPipelineDescriptor,
+    //     _layout: &MeshVertexBufferLayout,
+    //     _key: Material2dKey<Self>,
+    // ) -> Result<(), SpecializedMeshPipelineError> {
+    //     descriptor.primitive.polygon_mode = PolygonMode::Fill;
+    //     Ok(())
+    // }
 }
 
 /// A list of lines with a start and end position
