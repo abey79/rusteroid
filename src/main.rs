@@ -1,6 +1,7 @@
 mod components;
 mod events;
 mod line_sprite;
+mod svg_export;
 mod systems;
 
 use crate::components::{Flame, Ship, Speed, Thruster};
@@ -14,6 +15,7 @@ use crate::systems::{
 use bevy::prelude::*;
 use bevy::window::{WindowResized, WindowResolution};
 
+use crate::svg_export::SvgExportPlugin;
 #[cfg(debug_assertions)]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -126,6 +128,7 @@ fn main() {
             ..default()
         }),
         LineSpritePlugin,
+        SvgExportPlugin,
     ))
     .insert_resource(ClearColor(Color::BLACK))
     .insert_resource(FixedTime::new_from_secs(TIME_STEP))
