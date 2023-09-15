@@ -56,7 +56,7 @@ impl LineSprintBundleBuilder {
             .map(|(a, b)| (a.extend(0.0), b.extend(0.0)))
             .collect::<Vec<_>>();
         MaterialMesh2dBundle {
-            mesh: meshes.add(Mesh::from(LineList { lines }).into()).into(),
+            mesh: meshes.add(Mesh::from(LineList { lines })).into(),
             material: materials.add(LineMaterial {
                 color: Color::WHITE,
             }),

@@ -78,7 +78,7 @@ pub fn spawn_missiles_system(
         let time_to_live = missile.time_to_live;
         let momentum_transfer = missile.momentum_transfer;
 
-        let mut transform = ship_transform.clone();
+        let mut transform = *ship_transform;
         transform.translation += (heading_vec * Ship::MISSILE_SPAWN_OFFSET).extend(0.0);
         commands.spawn((
             missile,

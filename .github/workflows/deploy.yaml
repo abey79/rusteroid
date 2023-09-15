@@ -28,6 +28,7 @@ jobs:
       - name: Add wasm target
         run: |
           rustup target add wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
       - name: Build Release
         run: |
           trunk build --release --public-url "rusteroids/"
