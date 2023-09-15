@@ -36,9 +36,15 @@
         </div>
         <div class="game-container">
 
-            <canvas id="bevy">
+            <canvas id="bevy" tabindex="0"  >
                 Javascript and support for canvas is required
             </canvas>
         </div>
+
+        <script>
+            window.onload = function() {
+                document.getElementById("bevy").focus();
+            }
+        </script>
     </body>
 </html>

@@ -92,8 +92,8 @@ fn svg_export_system(
 
         #[cfg(target_arch = "wasm32")]
         {
-            let mut svg = String::new();
-            doc.to_svg_string()
+            let _ = doc
+                .to_svg_string()
                 .and_then(|svg| Ok(download_file("output.svg", &svg)));
         }
     }
