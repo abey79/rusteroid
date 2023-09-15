@@ -1916,7 +1916,7 @@ async function __wbg_init(input) {
     if (wasm !== undefined) return wasm;
 
     if (typeof input === 'undefined') {
-        input = new URL('rusteroids-25cdae45340dfbc5_bg.wasm', import.meta.url);
+        input = new URL('rusteroids-8884fa83a0fd8255_bg.wasm', import.meta.url);
     }
     const imports = __wbg_get_imports();
 
