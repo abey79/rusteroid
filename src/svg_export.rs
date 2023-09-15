@@ -1,7 +1,8 @@
+use crate::Resolution;
 use bevy::prelude::*;
 use bevy::render::mesh::VertexAttributeValues;
 use bevy::sprite::Mesh2dHandle;
-use vsvg_core::DocumentTrait;
+use vsvg_core::{DocumentTrait, Transforms};
 
 pub struct SvgExportPlugin;
 
@@ -32,6 +33,7 @@ fn keyboard_system(
 
 fn svg_export_system(
     meshes: Res<Assets<Mesh>>,
+    resolution: Res<Resolution>,
     mut svg_export_settings: ResMut<SvgExportSettings>,
     query: Query<(&GlobalTransform, &Mesh2dHandle)>,
 ) {
@@ -39,7 +41,7 @@ fn svg_export_system(
         svg_export_settings.run_export = false;
 
         let mut doc = vsvg_core::Document::default();
-        let mut layer = vsvg_core::Layer::new();
+        doc.metadata_mut().page_size = Some(resolution.as_page_size());
 
         for (transform, Mesh2dHandle(mesh_handle)) in query.iter() {
             let Some(mesh) = meshes.get(mesh_handle) else {
@@ -56,26 +58,70 @@ fn svg_export_system(
 
             let affine = transform.affine();
             let vertex_data = vertex_data.chunks(2).map(|vs| {
-                let v1: [f32; 2] = affine.transform_point3(Vec3::from(vs[0])).truncate().into();
-                let v2: [f32; 2] = affine.transform_point3(Vec3::from(vs[1])).truncate().into();
-                kurbo::PathSeg::Line(kurbo::Line::new(
-                    (v1[0] as f64, v1[1] as f64),
-                    (v2[0] as f64, v2[1] as f64),
-                ))
+                (
+                    vsvg_core::Point::from(affine.transform_point3(Vec3::from(vs[0])).truncate()),
+                    vsvg_core::Point::from(affine.transform_point3(Vec3::from(vs[1])).truncate()),
+                )
             });
 
-            let path = kurbo::BezPath::from_path_segments(vertex_data);
-
-            layer.paths.push(path.into());
+            doc.push_path(1, vsvg_core::Path::from_line_segments(vertex_data));
         }
 
-        doc.layers.insert(1, layer);
+        // convert to SVG coordinate system (y-axis down, origin top-left)
+        doc.scale_non_uniform(1.0, -1.0);
+        doc.translate(
+            resolution.width as f64 / 2.0,
+            resolution.height as f64 / 2.0,
+        );
 
-        // TODO: support wasm32
         #[cfg(not(target_arch = "wasm32"))]
         {
             let file = std::io::BufWriter::new(std::fs::File::create("/tmp/output.svg").unwrap());
             doc.to_svg(file).unwrap();
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            let mut svg = String::new();
+            doc.to_svg_string()
+                .and_then(|svg| Ok(download_file("output.svg", &svg)));
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn download_file(name: &str, content: &str) -> Option<()> {
+    use wasm_bindgen::JsCast;
+
+    let window = web_sys::window()?;
+    let document = window.document()?;
+    let body = document.body()?;
+
+    let a = document.create_element("a").ok()?;
+    let a = a.dyn_into::<web_sys::HtmlElement>().ok()?;
+
+    a.set_attribute(
+        "href",
+        &format!("data:image/svg+xml;charset=utf-8,{}", content),
+    )
+    .ok()?;
+    a.set_attribute("download", name).ok()?;
+    a.set_attribute("target", "_blank").ok()?;
+
+    body.append_child(&a).ok()?;
+
+    a.click();
+
+    body.remove_child(&a).ok()?;
+
+    Some(())
+}
+
+impl Resolution {
+    pub fn as_page_size(&self) -> vsvg_core::PageSize {
+        vsvg_core::PageSize {
+            w: self.width as f64,
+            h: self.height as f64,
         }
     }
 }

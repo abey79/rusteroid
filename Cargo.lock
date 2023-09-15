@@ -3204,6 +3204,8 @@ dependencies = [
  "kurbo",
  "rand",
  "vsvg-core",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -3758,9 +3760,10 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 [[package]]
 name = "vsvg-core"
 version = "0.1.0-alpha.0"
-source = "git+https://github.com/abey79/vsvg?rev=cbfbd1118235a146146774659cc4c609f2a554b4#cbfbd1118235a146146774659cc4c609f2a554b4"
+source = "git+https://github.com/abey79/vsvg?rev=6565afdcf95d360eda07e1f8211b86c2c15c88e8#6565afdcf95d360eda07e1f8211b86c2c15c88e8"
 dependencies = [
  "arrayvec",
+ "bevy",
  "bitvec",
  "indexmap 1.9.3",
  "kdtree",

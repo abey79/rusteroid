@@ -6,11 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version="0.11.2" }
-bevy-inspector-egui = { version = "0.19.0"}
+bevy = { version = "0.11.2" }
+bevy-inspector-egui = { version = "0.19.0" }
 rand = "0.8.5"
-vsvg-core = { git = "https://github.com/abey79/vsvg", rev = "cbfbd1118235a146146774659cc4c609f2a554b4" }
+vsvg-core = { git = "https://github.com/abey79/vsvg", rev = "6565afdcf95d360eda07e1f8211b86c2c15c88e8", features = ["bevy"] }
 kurbo = "0.9.1" # sync with vsvg
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = { version = "0.3.64", features = ["Document", "Element", "Window", "HtmlElement"] }
+wasm-bindgen = "0.2.87"
 
 [profile.dev]
 opt-level = 1
@@ -20,5 +24,5 @@ opt-level = 3
 
 
 [patch.crates-io]
-usvg = { git = "https://github.com/abey79/resvg", branch="vsvg" }
-rosvgtree = { git = "https://github.com/abey79/resvg", branch="vsvg" }
+usvg = { git = "https://github.com/abey79/resvg", branch = "vsvg" }
+rosvgtree = { git = "https://github.com/abey79/resvg", branch = "vsvg" }
