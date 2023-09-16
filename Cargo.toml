@@ -10,7 +10,7 @@ edition = "2021"
 bevy = { version = "0.11.2" }
 bevy-inspector-egui = { version = "0.19.0" }
 rand = "0.8.5"
-vsvg = { git = "https://github.com/abey79/vsvg", rev = "89de92da3e247d3f5a2a4073c566196d328128bf", features = ["bevy"] }
+vsvg = { git = "https://github.com/abey79/vsvg", rev = "b3e6aa40e8114de389539f92acb3f4ffd4b184f0", features = ["bevy"] }
 kurbo = "0.9.1" # sync with vsvg
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

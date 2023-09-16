@@ -74,14 +74,9 @@ fn svg_export_system(
             resolution.height as f64 / 2.0,
         );
         doc.crop(0.0, 0.0, resolution.width as f64, resolution.height as f64);
-        doc.push_path(
+        doc.push_shape(
             2,
-            vsvg::Path::from_shape(kurbo::Rect::new(
-                0.0,
-                0.0,
-                resolution.width as f64,
-                resolution.height as f64,
-            )),
+            kurbo::Rect::new(0.0, 0.0, resolution.width as f64, resolution.height as f64),
         );
 
         #[cfg(not(target_arch = "wasm32"))]

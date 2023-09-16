@@ -3760,7 +3760,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 [[package]]
 name = "vsvg"
 version = "0.1.0-alpha.0"
-source = "git+https://github.com/abey79/vsvg?rev=89de92da3e247d3f5a2a4073c566196d328128bf#89de92da3e247d3f5a2a4073c566196d328128bf"
+source = "git+https://github.com/abey79/vsvg?rev=b3e6aa40e8114de389539f92acb3f4ffd4b184f0#b3e6aa40e8114de389539f92acb3f4ffd4b184f0"
 dependencies = [
  "arrayvec",
  "bevy",
