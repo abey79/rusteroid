@@ -1,15 +1,16 @@
 [package]
 name = "rusteroids"
-version = "0.1.0"
+description = "Your plotter-friendly Asteroids clone"
+authors = ["Antoine Beyeler"]
+version = "0.1.0-alpha.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 bevy = { version = "0.11.2" }
 bevy-inspector-egui = { version = "0.19.0" }
 rand = "0.8.5"
-vsvg-core = { git = "https://github.com/abey79/vsvg", rev = "6565afdcf95d360eda07e1f8211b86c2c15c88e8", features = ["bevy"] }
+vsvg = { git = "https://github.com/abey79/vsvg", rev = "89de92da3e247d3f5a2a4073c566196d328128bf", features = ["bevy"] }
 kurbo = "0.9.1" # sync with vsvg
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

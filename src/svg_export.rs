@@ -2,7 +2,7 @@ use crate::Resolution;
 use bevy::prelude::*;
 use bevy::render::mesh::VertexAttributeValues;
 use bevy::sprite::Mesh2dHandle;
-use vsvg_core::{DocumentTrait, Transforms};
+use vsvg::{DocumentTrait, Transforms};
 
 pub struct SvgExportPlugin;
 
@@ -40,7 +40,7 @@ fn svg_export_system(
     if svg_export_settings.run_export {
         svg_export_settings.run_export = false;
 
-        let mut doc = vsvg_core::Document::default();
+        let mut doc = vsvg::Document::default();
         doc.metadata_mut().page_size = Some(resolution.as_page_size());
 
         for (transform, Mesh2dHandle(mesh_handle)) in query.iter() {
@@ -59,12 +59,12 @@ fn svg_export_system(
             let affine = transform.affine();
             let vertex_data = vertex_data.chunks(2).map(|vs| {
                 (
-                    vsvg_core::Point::from(affine.transform_point3(Vec3::from(vs[0])).truncate()),
-                    vsvg_core::Point::from(affine.transform_point3(Vec3::from(vs[1])).truncate()),
+                    vsvg::Point::from(affine.transform_point3(Vec3::from(vs[0])).truncate()),
+                    vsvg::Point::from(affine.transform_point3(Vec3::from(vs[1])).truncate()),
                 )
             });
 
-            doc.push_path(1, vsvg_core::Path::from_line_segments(vertex_data));
+            doc.push_path(1, vsvg::Path::from_line_segments(vertex_data));
         }
 
         // convert to SVG coordinate system (y-axis down, origin top-left)
@@ -76,7 +76,7 @@ fn svg_export_system(
         doc.crop(0.0, 0.0, resolution.width as f64, resolution.height as f64);
         doc.push_path(
             2,
-            vsvg_core::Path::from_shape(kurbo::Rect::new(
+            vsvg::Path::from_shape(kurbo::Rect::new(
                 0.0,
                 0.0,
                 resolution.width as f64,
@@ -128,8 +128,8 @@ fn download_file(name: &str, content: &str) -> Option<()> {
 }
 
 impl Resolution {
-    pub fn as_page_size(&self) -> vsvg_core::PageSize {
-        vsvg_core::PageSize {
+    pub fn as_page_size(&self) -> vsvg::PageSize {
+        vsvg::PageSize {
             w: self.width as f64,
             h: self.height as f64,
         }
