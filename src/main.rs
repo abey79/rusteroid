@@ -7,7 +7,7 @@ mod systems;
 
 use crate::components::{Flame, Ship, Speed, Thruster};
 use crate::events::{AsteroidKillEvent, AsteroidSpawnEvent};
-use crate::line_sprite::{LineMaterial, LineSprintBundleBuilder, LineSpritePlugin};
+use crate::line_sprite::{LineMaterial, LineSpriteBundleBuilder, LineSpritePlugin};
 use crate::systems::{
     asteroid_birth_system, asteroid_kill_system, basic_rotation_speed_system, basic_speed_system,
     explode_asteroid, keyboard_input_system, life_time_system, ship_motion_system,
@@ -41,7 +41,7 @@ fn setup(
             Ship::default(),
             Speed::default(),
             Thruster::default(),
-            LineSprintBundleBuilder::from_vertices(
+            LineSpriteBundleBuilder::new(
                 [
                     Vec2::new(-10.0, -5.0),
                     Vec2::new(10.0, -5.0),
@@ -56,7 +56,7 @@ fn setup(
     let child = commands
         .spawn((
             Flame,
-            LineSprintBundleBuilder::from_vertices(
+            LineSpriteBundleBuilder::new(
                 [
                     Vec2::new(-5.0, -8.0),
                     Vec2::new(5.0, -8.0),

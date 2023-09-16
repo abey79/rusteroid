@@ -3,6 +3,58 @@ use bevy::reflect::{TypePath, TypeUuid};
 use bevy::render::mesh::PrimitiveTopology;
 use bevy::render::render_resource::{AsBindGroup, ShaderRef};
 use bevy::sprite::{Material2d, Material2dPlugin, MaterialMesh2dBundle};
+use geo::coord;
+
+#[derive(Component, Debug)]
+pub enum Shape {
+    Polygon(Vec<Vec2>),
+    LineString(Vec<Vec2>),
+    Empty,
+}
+
+impl Shape {
+    pub fn from_vertices(vertices: impl IntoIterator<Item = Vec2>, close: bool) -> Self {
+        let mut vertices = vertices.into_iter().collect::<Vec<_>>();
+
+        if vertices.len() < 2 {
+            Self::Empty
+        } else if close {
+            if vertices.last() != vertices.first() {
+                vertices.push(vertices[0]);
+            }
+            Self::Polygon(vertices)
+        } else {
+            Self::LineString(vertices)
+        }
+    }
+
+    pub fn as_geometry(&self, transform: &Transform) -> Option<geo::Geometry<f32>> {
+        match self {
+            Self::Polygon(vertices) => {
+                let line_string = geo::LineString::new(vertices_to_coords(vertices, transform));
+
+                // no need to close the line_string, it's already been done in `from_vertices`
+                Some(geo::Polygon::new(line_string, vec![]).into())
+            }
+            Self::LineString(vertices) => {
+                Some(geo::LineString::new(vertices_to_coords(vertices, transform)).into())
+            }
+            Self::Empty => None,
+        }
+    }
+}
+
+fn vertices_to_coords(vertices: &[Vec2], transform: &Transform) -> Vec<geo::Coord<f32>> {
+    vertices
+        .iter()
+        .map(|v| {
+            let v = transform.transform_point(v.extend(0.0));
+            coord! {x: v.x, y:v.y}
+        })
+        .collect()
+}
+
+// ================
 
 pub struct LineSpritePlugin;
 
@@ -12,34 +64,36 @@ impl Plugin for LineSpritePlugin {
     }
 }
 
-pub struct LineSprintBundleBuilder {
-    lines: Vec<(Vec2, Vec2)>,
+#[derive(Bundle)]
+pub struct LineSpriteBundle {
+    shape: Shape,
+    material: MaterialMesh2dBundle<LineMaterial>,
+}
+
+pub struct LineSpriteBundleBuilder {
+    shape: Shape,
+    segments: Vec<(Vec2, Vec2)>,
     transform: Transform,
 }
 
-impl LineSprintBundleBuilder {
-    pub fn from_vertices(vertices: impl IntoIterator<Item = Vec2>, close: bool) -> Self {
-        let vertices: Vec<Vec2> = vertices.into_iter().collect();
-        let segment_iter = vertices.windows(2).map(|w| (w[0], w[1]));
+impl LineSpriteBundleBuilder {
+    /// Create a new line sprite bundle builder.
+    ///
+    /// The `exterior` vertices are used to create the collision detection shape. Additional
+    /// "decoration lines" can be added with the [`add_lines`] method.
+    pub fn new(exterior: impl IntoIterator<Item = Vec2>, close: bool) -> Self {
+        let exterior: Vec<Vec2> = exterior.into_iter().collect();
 
-        if close {
-            Self::from_segment(segment_iter.chain(if vertices.len() > 1 {
-                Some((vertices[vertices.len() - 1], vertices[0]))
-            } else {
-                None
-            }))
-        } else {
-            Self::from_segment(segment_iter)
-        }
-    }
+        let shape = Shape::from_vertices(exterior.clone(), close);
 
-    pub fn from_segment(segment: impl IntoIterator<Item = (Vec2, Vec2)>) -> Self {
         Self {
-            lines: segment.into_iter().collect(),
+            shape,
+            segments: line_to_segment(&exterior, close),
             transform: Transform::default(),
         }
     }
 
+    /// Add a transform to the sprite.
     pub fn transform(mut self, transform: Transform) -> Self {
         self.transform = transform;
         self
@@ -49,20 +103,37 @@ impl LineSprintBundleBuilder {
         self,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<LineMaterial>>,
-    ) -> MaterialMesh2dBundle<LineMaterial> {
+    ) -> LineSpriteBundle {
         let lines = self
-            .lines
+            .segments
             .into_iter()
             .map(|(a, b)| (a.extend(0.0), b.extend(0.0)))
             .collect::<Vec<_>>();
-        MaterialMesh2dBundle {
+        let material_bundle = MaterialMesh2dBundle {
             mesh: meshes.add(Mesh::from(LineList { lines })).into(),
             material: materials.add(LineMaterial {
                 color: Color::WHITE,
             }),
             transform: self.transform,
             ..default()
+        };
+
+        LineSpriteBundle {
+            shape: self.shape,
+            material: material_bundle,
         }
+    }
+}
+
+fn line_to_segment(line: &[Vec2], close: bool) -> Vec<(Vec2, Vec2)> {
+    let segment_iter = line.windows(2).map(|w| (w[0], w[1]));
+
+    if close && line.len() > 1 {
+        segment_iter
+            .chain([(line[line.len() - 1], line[0])])
+            .collect()
+    } else {
+        segment_iter.collect()
     }
 }
 
@@ -79,15 +150,6 @@ impl Material2d for LineMaterial {
     fn fragment_shader() -> ShaderRef {
         "shaders/line_material.wgsl".into()
     }
-
-    // fn specialize(
-    //     descriptor: &mut RenderPipelineDescriptor,
-    //     _layout: &MeshVertexBufferLayout,
-    //     _key: Material2dKey<Self>,
-    // ) -> Result<(), SpecializedMeshPipelineError> {
-    //     descriptor.primitive.polygon_mode = PolygonMode::Fill;
-    //     Ok(())
-    // }
 }
 
 /// A list of lines with a start and end position
