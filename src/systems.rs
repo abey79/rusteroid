@@ -164,14 +164,16 @@ pub fn asteroid_birth_system(
             .map(|v| v + Vec2::new(rng.gen_range(-20.0..20.0), rng.gen_range(-20.0..20.0)))
             .unwrap_or_else(|| Vec2::new(rng.gen_range(-50.0..50.0), rng.gen_range(-50.0..50.0)));
 
+        let (shape, extra_seg) = asteroid_builder.shape_and_segments(e.category);
+
         commands.spawn((
             Asteroid {
                 category: e.category,
             },
             Speed(speed),
             RotationSpeed(rng.gen_range(-1.0..1.0)),
-            LineSpriteBundleBuilder::new(asteroid_builder.shape(e.category))
-                .add_segments(asteroid_builder.extra_segments(e.category))
+            LineSpriteBundleBuilder::new(shape)
+                .add_segments(extra_seg)
                 .transform(
                     Transform::from_translation(position.extend(0.0))
                         .with_scale(Vec3::new(size, size, 1.0)),

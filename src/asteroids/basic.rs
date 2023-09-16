@@ -7,7 +7,7 @@ use std::f32::consts::PI;
 pub struct BasicAsteroid;
 
 impl AsteroidMaker for BasicAsteroid {
-    fn shape(&self, _category: u8) -> Shape {
+    fn shape_and_segments(&self, _category: u8) -> (Shape, Vec<(Vec2, Vec2)>) {
         let rng = &mut rand::thread_rng();
 
         const NUM_VERTICES: usize = 10;
@@ -21,6 +21,6 @@ impl AsteroidMaker for BasicAsteroid {
                 )
             });
 
-        Shape::from_vertices(pts, true)
+        (Shape::from_vertices(pts, true), vec![])
     }
 }
