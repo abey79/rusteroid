@@ -1,3 +1,4 @@
+use crate::asteroids::AsteroidMakerRegistry;
 use crate::components::{Asteroid, Flame, LifeTime, Missile, RotationSpeed, Ship, Speed, Thruster};
 use crate::events::{AsteroidKillEvent, AsteroidSpawnEvent};
 use crate::line_sprite::{LineMaterial, LineSpriteBundleBuilder, Shape};
@@ -5,7 +6,6 @@ use crate::{Resolution, TIME_STEP};
 use bevy::prelude::*;
 use geo::Intersects;
 use rand::Rng;
-use std::f32::consts::PI;
 use std::time::Duration;
 
 pub fn ship_motion_system(
@@ -82,12 +82,12 @@ pub fn spawn_missiles_system(
         let mut transform = *ship_transform;
         transform.translation += (heading_vec * Ship::MISSILE_SPAWN_OFFSET).extend(0.0);
 
-        let vertices = [Vec2::new(0.0, 0.0), Vec2::new(0.0, 4.0)];
+        let shape = Shape::from_vertices([Vec2::new(0.0, 0.0), Vec2::new(0.0, 4.0)], false);
         commands.spawn((
             missile,
             Speed(heading_vec.normalize() * (heading_speed * momentum_transfer + speed)),
             LifeTime(Timer::from_seconds(time_to_live, TimerMode::Once)),
-            LineSpriteBundleBuilder::new(vertices, false)
+            LineSpriteBundleBuilder::new(shape)
                 .transform(transform)
                 .build(&mut meshes, &mut materials),
         ));
@@ -141,6 +141,7 @@ pub fn spawn_asteroids_system(
 pub fn asteroid_birth_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<LineMaterial>>,
+    asteroid_maker: Res<AsteroidMakerRegistry>,
     mut commands: Commands,
     resolution: Res<Resolution>,
     mut spawn_events: ResMut<Events<AsteroidSpawnEvent>>,
@@ -149,16 +150,7 @@ pub fn asteroid_birth_system(
         let rng = &mut rand::thread_rng();
         let size = 10.0 * e.category as f32 + rng.gen_range(-2.0..2.0);
 
-        const NUM_VERTICES: usize = 10;
-        let pts = (0..NUM_VERTICES)
-            .map(|i| 2.0 * PI * (i as f32 / NUM_VERTICES as f32))
-            .map(|a| {
-                let rng = &mut rand::thread_rng();
-                Vec2::new(
-                    a.cos() + rng.gen_range(-0.1..0.1),
-                    a.sin() + rng.gen_range(-0.1..0.1),
-                )
-            });
+        let asteroid_builder = asteroid_maker.get_random();
 
         let position = e.start_position.unwrap_or_else(|| {
             Vec2::new(
@@ -178,7 +170,8 @@ pub fn asteroid_birth_system(
             },
             Speed(speed),
             RotationSpeed(rng.gen_range(-1.0..1.0)),
-            LineSpriteBundleBuilder::new(pts, true)
+            LineSpriteBundleBuilder::new(asteroid_builder.shape(e.category))
+                .add_segments(asteroid_builder.extra_segments(e.category))
                 .transform(
                     Transform::from_translation(position.extend(0.0))
                         .with_scale(Vec3::new(size, size, 1.0)),

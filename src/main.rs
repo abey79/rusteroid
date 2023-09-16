@@ -1,3 +1,4 @@
+mod asteroids;
 mod components;
 mod events;
 mod inspector;
@@ -5,9 +6,10 @@ mod line_sprite;
 mod svg_export;
 mod systems;
 
+use crate::asteroids::AsteroidMakerPlugin;
 use crate::components::{Flame, Ship, Speed, Thruster};
 use crate::events::{AsteroidKillEvent, AsteroidSpawnEvent};
-use crate::line_sprite::{LineMaterial, LineSpriteBundleBuilder, LineSpritePlugin};
+use crate::line_sprite::{LineMaterial, LineSpriteBundleBuilder, LineSpritePlugin, Shape};
 use crate::systems::{
     asteroid_birth_system, asteroid_kill_system, basic_rotation_speed_system, basic_speed_system,
     explode_asteroid, keyboard_input_system, life_time_system, ship_motion_system,
@@ -41,14 +43,14 @@ fn setup(
             Ship::default(),
             Speed::default(),
             Thruster::default(),
-            LineSpriteBundleBuilder::new(
+            LineSpriteBundleBuilder::new(Shape::from_vertices(
                 [
                     Vec2::new(-10.0, -5.0),
                     Vec2::new(10.0, -5.0),
                     Vec2::new(0.0, 15.0),
                 ],
                 true,
-            )
+            ))
             .build(&mut meshes, &mut materials),
         ))
         .id();
@@ -56,14 +58,14 @@ fn setup(
     let child = commands
         .spawn((
             Flame,
-            LineSpriteBundleBuilder::new(
+            LineSpriteBundleBuilder::new(Shape::from_vertices(
                 [
                     Vec2::new(-5.0, -8.0),
                     Vec2::new(5.0, -8.0),
                     Vec2::new(0.0, -13.0),
                 ],
                 true,
-            )
+            ))
             .build(&mut meshes, &mut materials),
         ))
         .id();
@@ -129,6 +131,7 @@ fn main() {
             LineSpritePlugin,
             SvgExportPlugin,
             InspectorPlugin,
+            AsteroidMakerPlugin,
         ))
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(FixedTime::new_from_secs(TIME_STEP))

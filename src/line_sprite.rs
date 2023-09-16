@@ -5,20 +5,18 @@ use bevy::render::render_resource::{AsBindGroup, ShaderRef};
 use bevy::sprite::{Material2d, Material2dPlugin, MaterialMesh2dBundle};
 use geo::coord;
 
+/// Describes the exterior shape of a sprite, for the purpose of rendering and collision detection.
 #[derive(Component, Debug)]
 pub enum Shape {
     Polygon(Vec<Vec2>),
     LineString(Vec<Vec2>),
-    Empty,
 }
 
 impl Shape {
     pub fn from_vertices(vertices: impl IntoIterator<Item = Vec2>, close: bool) -> Self {
         let mut vertices = vertices.into_iter().collect::<Vec<_>>();
 
-        if vertices.len() < 2 {
-            Self::Empty
-        } else if close {
+        if close && vertices.len() > 1 {
             if vertices.last() != vertices.first() {
                 vertices.push(vertices[0]);
             }
@@ -39,7 +37,6 @@ impl Shape {
             Self::LineString(vertices) => {
                 Some(geo::LineString::new(vertices_to_coords(vertices, transform)).into())
             }
-            Self::Empty => None,
         }
     }
 }
@@ -77,20 +74,32 @@ pub struct LineSpriteBundleBuilder {
 }
 
 impl LineSpriteBundleBuilder {
-    /// Create a new line sprite bundle builder.
-    ///
-    /// The `exterior` vertices are used to create the collision detection shape. Additional
-    /// "decoration lines" can be added with the [`add_lines`] method.
-    pub fn new(exterior: impl IntoIterator<Item = Vec2>, close: bool) -> Self {
-        let exterior: Vec<Vec2> = exterior.into_iter().collect();
-
-        let shape = Shape::from_vertices(exterior.clone(), close);
+    /// Create a new line sprite bundle builder with the provided shape.
+    pub fn new(shape: Shape) -> Self {
+        let segments = match &shape {
+            Shape::Polygon(vertices) => line_to_segment(vertices, true),
+            Shape::LineString(vertices) => line_to_segment(vertices, false),
+        };
 
         Self {
             shape,
-            segments: line_to_segment(&exterior, close),
+            segments,
             transform: Transform::default(),
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn add_line_string(mut self, line: impl IntoIterator<Item = Vec2>) -> Self {
+        self.segments.extend(line_to_segment(
+            &line.into_iter().collect::<Vec<_>>(),
+            false,
+        ));
+        self
+    }
+
+    pub fn add_segments(mut self, segments: impl IntoIterator<Item = (Vec2, Vec2)>) -> Self {
+        self.segments.extend(segments);
+        self
     }
 
     /// Add a transform to the sprite.
