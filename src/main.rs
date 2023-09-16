@@ -1,5 +1,6 @@
 mod components;
 mod events;
+mod inspector;
 mod line_sprite;
 mod svg_export;
 mod systems;
@@ -15,9 +16,8 @@ use crate::systems::{
 use bevy::prelude::*;
 use bevy::window::{WindowResized, WindowResolution};
 
+use crate::inspector::InspectorPlugin;
 use crate::svg_export::SvgExportPlugin;
-#[cfg(debug_assertions)]
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -114,52 +114,48 @@ fn on_resize_system(
 }
 
 fn main() {
-    let mut app = App::new();
-
-    app.add_plugins((
-        DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Rusteroïds".into(),
-                resolution: WindowResolution::new(INITIAL_WIDTH, INITIAL_HEIGHT),
-                canvas: Some("#bevy".to_owned()),
-                prevent_default_event_handling: false,
+    App::new()
+        .add_plugins((
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Rusteroïds".into(),
+                    resolution: WindowResolution::new(INITIAL_WIDTH, INITIAL_HEIGHT),
+                    canvas: Some("#bevy".to_owned()),
+                    prevent_default_event_handling: false,
+                    ..default()
+                }),
                 ..default()
             }),
-            ..default()
-        }),
-        LineSpritePlugin,
-        SvgExportPlugin,
-    ))
-    .insert_resource(ClearColor(Color::BLACK))
-    .insert_resource(FixedTime::new_from_secs(TIME_STEP))
-    .insert_resource(Resolution {
-        width: INITIAL_WIDTH,
-        height: INITIAL_HEIGHT,
-    })
-    .insert_resource(FrameTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
-    .add_systems(Startup, (setup,))
-    .add_systems(First, (spawn_missiles_system,)) // dont miss key-presses
-    .add_systems(
-        FixedUpdate,
-        (
-            keyboard_input_system.before(ship_motion_system),
-            ship_motion_system,
-            life_time_system,
-            spawn_asteroids_system.before(asteroid_birth_system),
-            asteroid_birth_system,
-            asteroid_kill_system,
-            basic_speed_system,
-            basic_rotation_speed_system,
-            on_resize_system,
-            wrap_positions,
-        ),
-    )
-    .add_systems(Update, (explode_asteroid,))
-    .init_resource::<Events<AsteroidSpawnEvent>>() // no GC for these events
-    .add_event::<AsteroidKillEvent>();
-
-    #[cfg(debug_assertions)]
-    app.add_plugins((WorldInspectorPlugin::new(),));
-
-    app.run();
+            LineSpritePlugin,
+            SvgExportPlugin,
+            InspectorPlugin,
+        ))
+        .insert_resource(ClearColor(Color::BLACK))
+        .insert_resource(FixedTime::new_from_secs(TIME_STEP))
+        .insert_resource(Resolution {
+            width: INITIAL_WIDTH,
+            height: INITIAL_HEIGHT,
+        })
+        .insert_resource(FrameTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
+        .add_systems(Startup, (setup,))
+        .add_systems(First, (spawn_missiles_system,)) // dont miss key-presses
+        .add_systems(
+            FixedUpdate,
+            (
+                keyboard_input_system.before(ship_motion_system),
+                ship_motion_system,
+                life_time_system,
+                spawn_asteroids_system.before(asteroid_birth_system),
+                asteroid_birth_system,
+                asteroid_kill_system,
+                basic_speed_system,
+                basic_rotation_speed_system,
+                on_resize_system,
+                wrap_positions,
+            ),
+        )
+        .add_systems(Update, (explode_asteroid,))
+        .init_resource::<Events<AsteroidSpawnEvent>>() // no GC for these events
+        .add_event::<AsteroidKillEvent>()
+        .run();
 }
