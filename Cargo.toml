@@ -12,10 +12,10 @@ bevy-inspector-egui = { version = "0.19.0" }
 itertools = "0"
 rand = "0.8.5"
 rand_distr = "0.4.3"
-vsvg = { git = "https://github.com/abey79/vsvg", rev = "3c88cac0b8b2681b76bd09ec76df4f7610932594", features = ["bevy"] }
-vsvg-sketch = { git = "https://github.com/abey79/vsvg", rev = "3c88cac0b8b2681b76bd09ec76df4f7610932594" }
+vsvg = { git = "https://github.com/abey79/vsvg", rev = "0981cd87038e4d3f91a99b5d65a43598627bd462", features = ["bevy"] }
+vsvg-sketch = { git = "https://github.com/abey79/vsvg", rev = "0981cd87038e4d3f91a99b5d65a43598627bd462", default-features = false }
 # vsvg = { path = "../vsvg/vsvg", features = ["bevy"] }
-# vsvg-sketch = { path = "../vsvg/vsvg-sketch" }
+# vsvg-sketch = { path = "../vsvg/vsvg-sketch", default-features = false}
 
 kurbo = "0.9.1" # sync with vsvg
 geo = "0.26.0"

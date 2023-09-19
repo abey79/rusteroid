@@ -72,7 +72,15 @@ fn setup(
 
     commands.entity(parent).push_children(&[child]);
 
-    *msaa = Msaa::Off;
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        *msaa = Msaa::Off;
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        *msaa = Msaa::Sample4;
+    }
 }
 
 trait ResExt {
