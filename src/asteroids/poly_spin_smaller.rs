@@ -1,5 +1,6 @@
 //! Kindly contributed by @Wyth@mastodon.art
 
+use super::utils::geo_point_to_vec;
 use crate::asteroids::AsteroidMaker;
 use crate::line_sprite::Shape;
 use bevy::math::Vec2;
@@ -7,10 +8,16 @@ use geo::{BooleanOps, Polygon, Rotate, Scale};
 use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use std::f32::consts::PI;
+use vsvg::Point;
+use vsvg_sketch::Sketch;
 
 pub struct PolySpinSmallerAsteroid;
 
 impl AsteroidMaker for PolySpinSmallerAsteroid {
+    fn poly_and_sketch(&self, _category: u8) -> (Vec<Point>, Sketch) {
+        todo!("convert to Sketch api")
+    }
+
     fn shape_and_segments(&self, category: u8) -> (Shape, Vec<(Vec2, Vec2)>) {
         let rng = &mut rand::thread_rng();
 
@@ -38,7 +45,7 @@ impl AsteroidMaker for PolySpinSmallerAsteroid {
 
             for line in clipped_lines {
                 line.into_points().windows(2).for_each(|pts| {
-                    extra_segments.push((point_to_vec(pts[0]), point_to_vec(pts[1])));
+                    extra_segments.push((geo_point_to_vec(pts[0]), geo_point_to_vec(pts[1])));
                 });
             }
 
@@ -47,14 +54,10 @@ impl AsteroidMaker for PolySpinSmallerAsteroid {
         }
 
         (
-            Shape::from_vertices(base_poly.exterior().points().map(point_to_vec), true),
+            Shape::from_vertices(base_poly.exterior().points().map(geo_point_to_vec), true),
             extra_segments,
         )
     }
-}
-
-fn point_to_vec(p: geo::Point<f32>) -> Vec2 {
-    Vec2::new(p.x(), p.y())
 }
 
 fn generate_polygon(
