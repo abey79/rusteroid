@@ -89,35 +89,41 @@ fn svg_export_system(
         {
             let _ = doc
                 .to_svg_string()
-                .and_then(|svg| Ok(download_file("output.svg", &svg)));
+                .map(|svg| download_file("output.svg", &svg));
         }
     }
 }
 
+//https://stackoverflow.com/a/19328891/229511
 #[cfg(target_arch = "wasm32")]
 fn download_file(name: &str, content: &str) -> Option<()> {
-    use wasm_bindgen::JsCast;
+    use wasm_bindgen::{JsCast, JsValue};
+    use web_sys::{Blob, BlobPropertyBag, Url};
 
     let window = web_sys::window()?;
     let document = window.document()?;
     let body = document.body()?;
 
-    let a = document.create_element("a").ok()?;
-    let a = a.dyn_into::<web_sys::HtmlElement>().ok()?;
-
-    a.set_attribute(
-        "href",
-        &format!("data:image/svg+xml;charset=utf-8,{}", content),
-    )
-    .ok()?;
-    a.set_attribute("download", name).ok()?;
-    a.set_attribute("target", "_blank").ok()?;
-
+    let aa = document.create_element("a").ok()?;
+    let a = aa.dyn_into::<web_sys::HtmlElement>().ok()?;
+    a.style().set_property("display", "none").ok()?;
     body.append_child(&a).ok()?;
 
-    a.click();
+    let mut blob_options = BlobPropertyBag::new();
+    blob_options.type_("image/svg+xml;charset=utf-8");
 
-    body.remove_child(&a).ok()?;
+    let blob_sequence = js_sys::Array::new_with_length(1);
+    blob_sequence.set(0, JsValue::from(content));
+
+    let blob = Blob::new_with_blob_sequence_and_options(&blob_sequence, &blob_options).ok()?;
+
+    let url = Url::create_object_url_with_blob(&blob).ok()?;
+
+    a.set_attribute("href", &url).ok()?;
+    a.set_attribute("download", name).ok()?;
+    a.click();
+    Url::revoke_object_url(&url).ok()?;
+    a.remove();
 
     Some(())
 }

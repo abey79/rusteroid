@@ -3353,6 +3353,7 @@ dependencies = [
  "bevy-inspector-egui",
  "geo",
  "itertools",
+ "js-sys",
  "kurbo",
  "rand",
  "rand_distr",
