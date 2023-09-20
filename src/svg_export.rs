@@ -35,7 +35,7 @@ fn svg_export_system(
     meshes: Res<Assets<Mesh>>,
     resolution: Res<Resolution>,
     mut svg_export_settings: ResMut<SvgExportSettings>,
-    query: Query<(&GlobalTransform, &Mesh2dHandle)>,
+    query: Query<(&GlobalTransform, &ComputedVisibility, &Mesh2dHandle)>,
 ) {
     if svg_export_settings.run_export {
         svg_export_settings.run_export = false;
@@ -43,7 +43,11 @@ fn svg_export_system(
         let mut doc = vsvg::Document::default();
         doc.metadata_mut().page_size = Some(resolution.as_page_size());
 
-        for (transform, Mesh2dHandle(mesh_handle)) in query.iter() {
+        for (transform, visibility, Mesh2dHandle(mesh_handle)) in query.iter() {
+            if !visibility.is_visible() {
+                continue;
+            }
+
             let Some(mesh) = meshes.get(mesh_handle) else {
                 continue;
             };
